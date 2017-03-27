@@ -11,6 +11,8 @@ from util.top_similar import TopSimilar as TopRecommendations
 from scipy import sparse
 import datetime
 import sys
+from sklearn.svm import LinearSVC
+from sklearn.grid_search import GridSearchCV
 
 class SVR(object):
 
@@ -67,9 +69,26 @@ class SVR(object):
 				feature_vectors = np.array(feature_vectors)
 				print("*** FITTING SVR MODEL ***")
 				t0 = datetime.datetime.now()
-				clf = SKSVR(verbose=True)
+
+				# This classifier supports nonleniar models, applies a kernel, uses libsvm implementation,
+				# clf = SKSVR(verbose=True)
+
 				print("Vectors size are {}".format(feature_vectors.shape))
-				clf.fit((feature_vectors), labels)
+
+				# Using grid search for fitting hyper barameters (Penalty, C)
+				tuned_parameters = [{'penalty': ['l1', 'l2'], 'C': [0.001, 0.01, 1, 10, 100, 1000, 10000]}]
+				grid_clf = GridSearchCV(LinearSVC(dual=False, tol=0.0001, random_state=41), tuned_parameters, cv=3, scoring='roc_auc')
+				grid_clf.fit(feature_vectors, labels)
+				print("Best parameters set found on development set: {}").format(grid_clf.best_estimator_)
+
+				# Using LinnearSVC instead of SVC, it uses the implementation of liblinear, should be faster for linear models.
+				# Setting the classifier with the best parameters found in gridsearch
+				clf = LinearSVC(penalty=grid_clf.best_params_['penalty'], loss='squared_hinge', dual=False,
+								C=grid_clf.best_params_['C'], random_state=41)
+
+				# Learning the model
+				clf.fit(feature_vectors, labels)
+
 				print("took {}".format(datetime.datetime.now() - t0))
 				print("*** FITTED SVR FOR USER {} ***".format(user))
 				print(self.fold_test_indices[user])
@@ -83,7 +102,7 @@ class SVR(object):
 				print("MRR @ 10 = {} for user {}".format(mrr_at_10, user))
 				print("MRR Mean so far {}".format(np.array(mrrs).mean()))
 			print("Average NDCG is {} for fold {}".format(np.array(ndcgs).mean(), fold))
-			print("Average MRR is {} for fold {}".format(np.array(mrr).mean(), fold))
+			print("Average MRR is {} for fold {}".format(np.array(mrrs).mean(), fold))
 
 
 	def evaluate(self, user, predictions, test_indices, k):
