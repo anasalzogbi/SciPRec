@@ -130,7 +130,7 @@ class SVR(object):
 		liked_papers = self.ratings[user].nonzero()[0]
 		return self.similarity_matrix[paper][liked_papers].max()
 
-	def build_vector_label(self, pair, user):
+	def build_vector_label_conf_svr(self, pair, user):
 		pivot = pair[0]
 		peer = pair[1]
 		feature_vector = []
@@ -143,14 +143,39 @@ class SVR(object):
 		# label = self.similarity_matrix[pivot][peer]
 		return feature_vector, label
 
-	def build_vector_label_svm(self, pair, user):
+	def build_vector_label_conf_svm(self, pair, user):
+		"""
+        Builds two feature vectors for each pair (p1, p2) as:
+        confidence(p2) * (p1-p2) -> +1
+        confidence(p2) * (p2-p1) -> -1
+        """
 		pivot = pair[0]
 		peer = pair[1]
 		feature_vector = []
 		label = []
-		feature_vector.append((self.documents_matrix[pivot] - self.documents_matrix[peer]) * self.get_user_paper_similarity(user, peer))
+		feature_vector.append(
+			(self.documents_matrix[pivot] - self.documents_matrix[peer]) * self.get_confidence(user, peer))
 		label.append(1)
-		feature_vector.append((self.documents_matrix[peer] - self.documents_matrix[pivot]) * self.get_user_paper_similarity(user, peer))
+		feature_vector.append(
+			(self.documents_matrix[peer] - self.documents_matrix[pivot]) * self.get_confidence(user, peer))
+		label.append(-1)
+		# feature_vector = (self.documents_matrix[pivot] - self.documents_matrix[peer]) * self.get_user_paper_similarity(user, peer)
+		# label = self.similarity_matrix[pivot][peer]
+		return feature_vector, label
+
+	def build_vector_label_sim_svm(self, pair, user):
+		"""
+		Builds two feature vectors for each pair (p1, p2) as:
+		(1-user_paper_similarity(user, p2)) * (p1-p2) -> +1
+		(1-user_paper_similarity(user, p2)) * (p2-p1) -> -1
+		"""
+		pivot = pair[0]
+		peer = pair[1]
+		feature_vector = []
+		label = []
+		feature_vector.append((self.documents_matrix[pivot] - self.documents_matrix[peer]) * (1- self.get_user_paper_similarity(user, peer)))
+		label.append(1)
+		feature_vector.append((self.documents_matrix[peer] - self.documents_matrix[pivot]) * (1-self.get_user_paper_similarity(user, peer)))
 		label.append(-1)
 		return feature_vector, label
 
