@@ -1,0 +1,7 @@
+Pairs are weighted by the distance of peer to user, parameters are learned by grid search, Linear SVC:
+- One model per user:
+Average NDCG is 0.0125782447137 for fold 0
+Average MRR is 0.031908879567 for fold 0
+- Single model for all users:
+Average NDCG is 0.0035043872111 for fold 0
+Average MRR is 0.00936067575412 for fold 0
