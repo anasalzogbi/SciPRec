@@ -2,7 +2,7 @@
 """
 This module provides simple wrappign functions for topia
 """
-from topia.termextract import extract
+# from topia.termextract import extract
 from data_parser import DataParser
 from util.data_dumper import DataDumper
 import numpy as np
