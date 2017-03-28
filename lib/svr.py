@@ -29,7 +29,7 @@ class SVR(object):
 		self.documents_matrix = self.parser.get_document_word_distribution()
 		print("*** KEYWORDS EXTRACTED ***")
 		self.ratings = self.parser.get_ratings_matrix()
-		self.k_folds = 1
+		self.k_folds = 5
 		self.train_indices, self.test_indices = self.get_kfold_indices()
 		self.train()
 
