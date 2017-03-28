@@ -29,7 +29,7 @@ class SVR(object):
 		self.documents_matrix = self.parser.get_document_word_distribution()
 		print("*** KEYWORDS EXTRACTED ***")
 		self.ratings = self.parser.get_ratings_matrix()
-		self.k_folds = 5
+		self.k_folds = 1
 		self.train_indices, self.test_indices = self.get_kfold_indices()
 		self.train()
 
@@ -49,7 +49,7 @@ class SVR(object):
 			self.fold_train_indices, self.fold_test_indices = self.get_fold_indices(fold, self.train_indices, self.test_indices)
 			self.train_data, self.test_data = self.get_fold(fold, self.train_indices, self.test_indices)
 			## TODO Look at the users that have p+ p+ as pair
-			self.peer_extractor = PeerExtractor(self.train_data, self.documents_matrix, 'least_similar_k', 'cosine', 20)
+			self.peer_extractor = PeerExtractor(self.train_data, self.documents_matrix, 'least_similar_k', 'cosine', 200)
 			self.similarity_matrix = self.peer_extractor.get_similarity_matrix()
 			for user in range(self.ratings.shape[0]):
 				pairs = self.peer_extractor.get_user_peer_papers(user)
@@ -59,7 +59,7 @@ class SVR(object):
 				i = 0
 				for pair in pairs:
 					# self.parser.get_author_similarity(pair[1], self.ratings[user].nonzero())
-					feature_vector, label = self.build_vector_label_svm(pair, user)
+					feature_vector, label = self.build_vector_label_sim_svm(pair, user)
 					feature_vectors.append(feature_vector[0])
 					feature_vectors.append(feature_vector[1])
 					labels.append(label[0])
@@ -77,7 +77,7 @@ class SVR(object):
 
 				# Using grid search for fitting hyper barameters (Penalty, C)
 				tuned_parameters = [{'penalty': ['l1', 'l2'], 'C': [0.001, 0.01, 1, 10, 100, 1000, 10000]}]
-				grid_clf = GridSearchCV(LinearSVC(dual=False, tol=0.0001, random_state=41), tuned_parameters, cv=3, scoring='roc_auc')
+				grid_clf = GridSearchCV(LinearSVC(dual=False, tol=0.0001, random_state=41), tuned_parameters, cv=3, scoring='roc_auc', n_jobs=-1)
 				grid_clf.fit(feature_vectors, labels)
 				print("Best parameters set found on development set: {}").format(grid_clf.best_estimator_)
 
@@ -127,6 +127,7 @@ class SVR(object):
 		return 0, mrr
 
 	def get_user_paper_similarity(self, user, paper):
+		## TODO: BUG fixing, liked_papers must be positives from the training set, not from all of the rarings!
 		liked_papers = self.ratings[user].nonzero()[0]
 		return self.similarity_matrix[paper][liked_papers].max()
 
@@ -271,7 +272,7 @@ class SVR(object):
 			for index in range(self.k_folds):
 				if index == self.k_folds - 1:
 
-				 	test_ratings[index] = np.array(rated_items_indices[counter:len(rated_items_indices)])
+					test_ratings[index] = np.array(rated_items_indices[counter:len(rated_items_indices)])
 				else:
 					test_ratings[index] = np.array(rated_items_indices[counter:counter + size_of_test])
 				counter += size_of_test
@@ -279,10 +280,10 @@ class SVR(object):
 				# adding unique zero ratings to each test set
 				num_to_add.append(int((self.ratings.shape[1] / self.k_folds) - len(test_ratings[index])))
 				if index > 0 and num_to_add[index] != num_to_add[index - 1]:
-				 	addition = non_rated_indices[index * (num_to_add[index - 1]):
+					addition = non_rated_indices[index * (num_to_add[index - 1]):
 															(num_to_add[index - 1] * index) + num_to_add[index]]
 				else:
-				 	addition = non_rated_indices[index * (num_to_add[index]):num_to_add[index] * (index + 1)]
+					addition = non_rated_indices[index * (num_to_add[index]):num_to_add[index] * (index + 1)]
 
 				test_ratings[index] = np.append(test_ratings[index], addition)
 				test_indices.append(test_ratings[index])

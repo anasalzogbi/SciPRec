@@ -96,7 +96,7 @@ class PeerExtractor(object):
 		if self.similarity_metric == 'cosine':
 			self.similarity_matrix = cosine_similarity(sparse.csr_matrix(self.documents))
 		#self.similarity_matrix[self.similarity_matrix == 1.0] = 0
-		similarity_matrix = self.documents.dot(self.documents.T)
+		# similarity_matrix = self.documents.dot(self.documents.T)
 
 	def get_textual_similarity(self, user, paper):
 		liked_papers = self.ratings[user].nonzero()
