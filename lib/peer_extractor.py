@@ -53,11 +53,14 @@ class PeerExtractor(object):
 		for paper in positive_papers:
 			top_similar = TopSimilar(self.k)
 			## Get papers with non zero similarity
-			nonzeros = self.similarity_matrix[paper].nonzero()[0]
+			# nonzeros = self.similarity_matrix[paper].nonzero()[0]
+			nonzeros = np.where(self.similarity_matrix[paper] > 0.05)[0]
 			for index in nonzeros:
 				if paper == index:
 					continue
-				top_similar.insert(index, 1 - self.similarity_matrix[user][index])
+				# This is a bad bug, the first index should be paper not user!
+				# top_similar.insert(index, 1 - self.similarity_matrix[user][index])
+				top_similar.insert(index, 1 - self.similarity_matrix[paper][index])
 			similar_papers = top_similar.get_indices()
 			for similar_paper in similar_papers:
 				pairs.append((paper, similar_paper))
