@@ -43,8 +43,8 @@ class DataParser(object):
 		"""
 		Starts parsing the data and gets matrices ready for training
 		"""
-		self.feature_labels, self.feature_matrix = self.parse_paper_features()
 		self.raw_labels, self.raw_data = self.parse_paper_raw_data()
+		self.feature_labels, self.feature_matrix = self.parse_paper_features()
 		self.ratings = self.generate_ratings_matrix()
 		self.build_document_word_matrix()
 		lda = LatentDirichletAllocation(n_topics=100, max_iter=10,
@@ -125,7 +125,7 @@ class DataParser(object):
 				i += 1
 		
 		if self.paper_count is None:
-			self.paper_count = len(feature_vec)
+			self.paper_count = len(feature_vec) + 1
 		return labels, np.array(feature_vec)
 
 	def insert_word(self, word):
@@ -221,7 +221,7 @@ class DataParser(object):
 
 
 		if self.paper_count is None:
-			self.paper_count = len(data_vec)
+			self.paper_count = len(data_vec) + 1
 
 		print "Total is "
 		print(self.words_count)
@@ -234,6 +234,7 @@ class DataParser(object):
 		if self.paper_count is None:
 			self.raw_labels, self.raw_data = self.parse_paper_raw_data()
 
+		print self.paper_count
 		path = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.dataset_folder, 'users.dat')
 		self.user_count = sum(1 for line in open(path))
 		ratings = np.zeros((self.user_count, self.paper_count))

@@ -16,7 +16,7 @@ from sklearn.grid_search import GridSearchCV
 
 class SVR(object):
 
-	DATASET = 'citeulike-a'
+	DATASET = 'dummy'
 
 	def __init__(self):
 		print("*** PARSING DATA ***")
