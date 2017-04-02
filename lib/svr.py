@@ -45,6 +45,7 @@ class SVR(object):
 		print("*** TRAINING ***")
 		ndcgs = []
 		mrrs = []
+		recalls = []
 		for fold in range(self.k_folds):
 			self.fold_train_indices, self.fold_test_indices = self.get_fold_indices(fold, self.train_indices, self.test_indices)
 			self.train_data, self.test_data = self.get_fold(fold, self.train_indices, self.test_indices)
@@ -91,16 +92,19 @@ class SVR(object):
 
 				print("took {}".format(datetime.datetime.now() - t0))
 				print("*** FITTED SVR FOR USER {} ***".format(user))
-				print(self.fold_test_indices[user])
 				test_documents, test_indices = self.get_test_documents(self.fold_test_indices, user)
 				predictions = clf.decision_function(test_documents)
 				ndcg_at_10, mrr_at_10 = self.evaluate(user, predictions, test_indices, 10)
+				recall_at_200 = self.calculate_top_recall(user, predictions, test_indices, 200)
 				ndcgs.append(ndcg_at_10)
 				mrrs.append(mrr_at_10)
+				recalls.append(recall_at_200)
 				print("NDCG @ 10 = {} for user {}".format(ndcg_at_10, user))
 				print("NDCG Mean so far {}".format(np.array(ndcgs).mean()))
 				print("MRR @ 10 = {} for user {}".format(mrr_at_10, user))
 				print("MRR Mean so far {}".format(np.array(mrrs).mean()))
+				print("Recall @ 200 = {} for user {}".format(recall_at_200, user))
+				print("MRR Mean so far {}".format(np.array(recall_at_200).mean()))
 			print("Average NDCG is {} for fold {}".format(np.array(ndcgs).mean(), fold))
 			print("Average MRR is {} for fold {}".format(np.array(mrrs).mean(), fold))
 
@@ -116,15 +120,32 @@ class SVR(object):
 		recommendation_indices = top_predictions.get_indices()
 		for pos_index, index in enumerate(recommendation_indices):
 			hit_found = False
-			dcg += (self.ratings[user][index] / np.log2(pos_index + 2))
+			dcg += (self.test_data[user][index] / np.log2(pos_index + 2))
 			idcg += 1 / np.log2(pos_index + 2)
-			if self.ratings[user][index] == 1 and mrr == 0.0:
+			if self.test_data[user][index] == 1 and mrr == 0.0:
 				mrr = 1.0 / (pos_index + 1) * 1.0
 			if pos_index + 1 == k:
 				break
 		if idcg != 0:
 			return (dcg / idcg), mrr
 		return 0, mrr
+
+	def calculate_top_recall(self, user, predictions, test_indices, k):
+		recall = 0.0
+		top_predictions = TopRecommendations(k)
+		for prediction, index in zip(predictions, test_indices):
+			top_predictions.insert(index, prediction)
+		nonzeros = self.test_data[user].nonzero()[0]
+		denom = len(nonzeros) * 1.0
+		for index in top_predictions.get_indices():
+			if index in nonzeros:
+				recall += 1.0
+		print("denom")
+		print(denom)
+
+		return recall / min(denom, k)
+
+
 
 	def get_user_paper_similarity(self, user, paper):
 		## TODO: BUG fixing, liked_papers must be positives from the training set, not from all of the rarings!
