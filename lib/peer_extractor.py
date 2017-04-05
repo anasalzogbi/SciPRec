@@ -12,8 +12,9 @@ import sys
 class PeerExtractor(object):
 
 
-	def __init__(self, ratings, documents, method, similarity_metric, k):
+	def __init__(self, ratings, documents, method, similarity_metric, k, sim_threshold):
 		print("*** PEER EXTRACTOR INIT ***")
+		self.sim_threshold = sim_threshold
 		self.ratings = ratings
 		self.method = method
 		self.k = k
@@ -54,7 +55,7 @@ class PeerExtractor(object):
 			top_similar = TopSimilar(self.k)
 			## Get papers with non zero similarity
 			# nonzeros = self.similarity_matrix[paper].nonzero()[0]
-			nonzeros = np.where(self.similarity_matrix[paper] > 0.05)[0]
+			nonzeros = np.where(self.similarity_matrix[paper] > self.sim_threshold)[0]
 			for index in nonzeros:
 				if paper == index:
 					continue

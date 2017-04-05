@@ -16,12 +16,13 @@ from sklearn.grid_search import GridSearchCV
 
 class SVR(object):
 
-	DATASET = 'dummy'
+	DATASET = 'citeulike-a'
 
 	def __init__(self):
 		t0 = datetime.datetime.now()
-		self.peer_size = 100
+		self.peer_size = 70
 		self.topics_num = 50
+		self.sim_threshold = 0.07
 		print("*** PARSING DATA ***")
 		self.parser = DataParser(self.DATASET, self.topics_num)
 		print("*** DATA PARSED ***")
@@ -59,7 +60,7 @@ class SVR(object):
 			self.fold_train_indices, self.fold_test_indices = self.get_fold_indices(fold, self.train_indices, self.test_indices)
 			self.train_data, self.test_data = self.get_fold(fold, self.train_indices, self.test_indices)
 			## TODO Look at the users that have p+ p+ as pair
-			self.peer_extractor = PeerExtractor(self.train_data, self.documents_matrix, 'least_similar_k', 'cosine', self.peer_size)
+			self.peer_extractor = PeerExtractor(self.train_data, self.documents_matrix, 'least_similar_k', 'cosine', self.peer_size, self.sim_threshold)
 			self.similarity_matrix = self.peer_extractor.get_similarity_matrix()
 			fold_results = []
 			for user in range(self.ratings.shape[0]):
@@ -87,23 +88,22 @@ class SVR(object):
 				# print("Vectors size are {}".format(feature_vectors.shape))
 
 				# Using grid search for fitting hyper barameters (Penalty, C)
-				tuned_parameters = [{'penalty': ['l1', 'l2'], 'C': [0.001, 0.01, 1, 10, 100, 1000, 10000]}]
-				grid_clf = GridSearchCV(LinearSVC(dual=False, tol=0.0001, random_state=41), tuned_parameters, cv=3, scoring='roc_auc', n_jobs=-1)
+				tuned_parameters = [{'penalty': ['l1', 'l2'], 'C': [0.001, 0.01, 1, 10, 100, 1000]}]
+				grid_clf = GridSearchCV(LinearSVC(dual=False, tol=0.0001, random_state=41), tuned_parameters, cv=3, scoring='recall', n_jobs=-1)
 				grid_clf.fit(feature_vectors, labels)
 				# print("Best parameters set found on development set: {}").format(grid_clf.best_estimator_)
 
 				# Using LinnearSVC instead of SVC, it uses the implementation of liblinear, should be faster for linear models.
 				# Setting the classifier with the best parameters found in gridsearch
-				clf = LinearSVC(penalty=grid_clf.best_params_['penalty'], loss='squared_hinge', dual=False,
-								C=grid_clf.best_params_['C'], random_state=41)
+				# clf = LinearSVC(penalty=grid_clf.best_params_['penalty'], loss='squared_hinge', dual=False,C=grid_clf.best_params_['C'], random_state=41)
 
 				# Learning the model
-				clf.fit(feature_vectors, labels)
+				grid_clf.fit(feature_vectors, labels)
 
 
 				print("*** FITTED SVR FOR USER {} ***".format(user))
 				test_documents, test_indices = self.get_test_documents(self.fold_test_indices, user)
-				predictions = clf.decision_function(test_documents)
+				predictions = grid_clf.decision_function(test_documents)
 				ndcg_at_10, mrr_at_10 = self.evaluate(user, predictions, test_indices, 10)
 				recall_at_10 = self.calculate_top_recall(user, predictions, test_indices, 10)
 				recall_at_50 = self.calculate_top_recall(user, predictions, test_indices, 50)
@@ -130,7 +130,7 @@ class SVR(object):
 			folds_results.append(np.array(fold_results).mean(axis = 0))
 		print("-----------------------------------------------------------")
 		print("-----------------------------------------------------------")
-		print("Final results for peer size {} and {} topics:".format(self.peer_size, self.topics_num))
+		print("Final results for peer size {} and {} topics and Sim_threshold = {}:".format(self.peer_size, self.topics_num, self.sim_threshold))
 		print('                '+str(['{:^7}'.format(v) for v in ["NDCG@10", "MRR", "REC@10", "REC@50", "REC@100", "REC@200"]]))
 		for (i,f) in enumerate(folds_results):
 			print('For fold {}:     '.format(i)+str(['{:06.5f}'.format(v) for v in f]))
