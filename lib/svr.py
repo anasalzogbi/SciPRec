@@ -20,9 +20,10 @@ class SVR(object):
 
 	def __init__(self):
 		t0 = datetime.datetime.now()
-		self.peer_size = 200
+		self.peer_size = 100
+		self.topics_num = 50
 		print("*** PARSING DATA ***")
-		self.parser = DataParser(self.DATASET)
+		self.parser = DataParser(self.DATASET, self.topics_num)
 		print("*** DATA PARSED ***")
 		# print("*** EXTRACTING KEYWORDS ***")
 		# labels, data = self.parser.get_raw_data()
@@ -129,7 +130,7 @@ class SVR(object):
 			folds_results.append(np.array(fold_results).mean(axis = 0))
 		print("-----------------------------------------------------------")
 		print("-----------------------------------------------------------")
-		print("Final results for peer size {}:".format(self.peer_size))
+		print("Final results for peer size {} and {} topics:".format(self.peer_size, self.topics_num))
 		print('                '+str(['{:^7}'.format(v) for v in ["NDCG@10", "MRR", "REC@10", "REC@50", "REC@100", "REC@200"]]))
 		for (i,f) in enumerate(folds_results):
 			print('For fold {}:     '.format(i)+str(['{:06.5f}'.format(v) for v in f]))

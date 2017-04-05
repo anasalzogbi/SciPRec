@@ -12,7 +12,7 @@ from sklearn.decomposition import LatentDirichletAllocation
 
 class DataParser(object):
 
-	def __init__(self, dataset):
+	def __init__(self, dataset, topics_num):
 		"""
 		Initializes the data parser given a dataset name
 		"""
@@ -35,6 +35,7 @@ class DataParser(object):
 		self.words_count = 0
 		self.id_map = {}
 		self.authors_map = {}
+		self.topics_num = topics_num
 
 		self.process()
 	
@@ -47,7 +48,7 @@ class DataParser(object):
 		self.feature_labels, self.feature_matrix = self.parse_paper_features()
 		self.ratings = self.generate_ratings_matrix()
 		self.build_document_word_matrix()
-		lda = LatentDirichletAllocation(n_topics=100, max_iter=10,
+		lda = LatentDirichletAllocation(n_topics=self.topics_num, max_iter=10,
 										learning_method='online',
 										learning_offset=50., random_state=0,
 										verbose=0)
