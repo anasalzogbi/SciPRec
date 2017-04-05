@@ -2,6 +2,7 @@
 *.swp
 *.swo
 .cache/*
+temp/*
 
 # Data files
 *.dat
