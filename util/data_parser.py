@@ -48,11 +48,13 @@ class DataParser(object):
 		self.feature_labels, self.feature_matrix = self.parse_paper_features()
 		self.ratings = self.generate_ratings_matrix()
 		self.build_document_word_matrix()
-		lda = LatentDirichletAllocation(n_topics=self.topics_num, max_iter=10,
-										learning_method='online',
-										learning_offset=50., random_state=0,
-										verbose=0)
-		self.document_distribution = lda.fit_transform(self.document_words)
+		print("shape")
+		print(self.document_words.shape)
+		# lda = LatentDirichletAllocation(n_topics=self.topics_num, max_iter=10,
+		# 								learning_method='online',
+		# 								learning_offset=50., random_state=0,
+		# 								verbose=0)
+		# self.document_distribution = lda.fit_transform(self.document_words)
 		self.parse_authors()
 
 	def build_document_word_matrix(self):
@@ -84,8 +86,8 @@ class DataParser(object):
 
 
 	def get_document_word_distribution(self):
-		# return self.document_words
-		return self.document_distribution
+		return self.document_words
+		# return self.document_distribution
 
 
 	def parse_paper_features(self):
@@ -126,7 +128,7 @@ class DataParser(object):
 				i += 1
 		
 		if self.paper_count is None:
-			self.paper_count = len(feature_vec) + 1
+			self.paper_count = len(feature_vec)
 		return labels, np.array(feature_vec)
 
 	def insert_word(self, word):
@@ -222,7 +224,7 @@ class DataParser(object):
 
 
 		if self.paper_count is None:
-			self.paper_count = len(data_vec) + 1
+			self.paper_count = len(data_vec)
 
 		print "Total is "
 		print(self.words_count)

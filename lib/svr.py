@@ -90,15 +90,14 @@ class SVR(object):
 				# Using grid search for fitting hyper barameters (Penalty, C)
 				tuned_parameters = [{'penalty': ['l1', 'l2'], 'C': [0.001, 0.01, 1, 10, 100, 1000]}]
 				grid_clf = GridSearchCV(LinearSVC(dual=False, tol=0.0001, random_state=41), tuned_parameters, cv=3, scoring='recall', n_jobs=-1)
+				#grid_clf = SKSVR(verbose=True)
 				grid_clf.fit(feature_vectors, labels)
 				# print("Best parameters set found on development set: {}").format(grid_clf.best_estimator_)
 
 				# Using LinnearSVC instead of SVC, it uses the implementation of liblinear, should be faster for linear models.
 				# Setting the classifier with the best parameters found in gridsearch
 				# clf = LinearSVC(penalty=grid_clf.best_params_['penalty'], loss='squared_hinge', dual=False,C=grid_clf.best_params_['C'], random_state=41)
-
 				# Learning the model
-				grid_clf.fit(feature_vectors, labels)
 
 
 				print("*** FITTED SVR FOR USER {} ***".format(user))
@@ -171,6 +170,8 @@ class SVR(object):
 		for index in top_predictions.get_indices():
 			if index in nonzeros:
 				recall += 1.0
+		if recall == 0:
+			return 0
 		return recall / min(denom, k)
 
 
