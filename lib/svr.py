@@ -6,25 +6,29 @@ from util.data_parser import DataParser
 from util.keyword_extractor import KeywordExtractor
 from lib.peer_extractor import PeerExtractor
 import numpy as np
-from sklearn.svm import SVC as SKSVR
+from sklearn.svm import LinearSVC as SKSVR
 from util.top_similar import TopSimilar as TopRecommendations
 from scipy import sparse
 import datetime
 import sys
 from sklearn.svm import LinearSVC
 from sklearn.grid_search import GridSearchCV
+from lib.configuration_manager import ConfigurationManager
 
 class SVR(object):
 
-	DATASET = 'citeulike-a'
+	DATASET = 'dummy'
 
 	def __init__(self):
+		self.config_manager = ConfigurationManager()
 		t0 = datetime.datetime.now()
-		self.peer_size = 70
-		self.topics_num = 50
-		self.sim_threshold = 0.07
+		self.peer_size = self.config_manager.get_number_of_peers()
+		self.topics_num = self.config_manager.get_number_of_topics()
+		self.sim_threshold = self.config_manager.get_similarity_threshold()
+		paper_presentation = self.config_manager.get_paper_presentation()
 		print("*** PARSING DATA ***")
-		self.parser = DataParser(self.DATASET, self.topics_num)
+		self.parser = DataParser(self.DATASET, self.topics_num, paper_presentation)
+		self.sampling_method = self.config_manager.get_sampling()
 		print("*** DATA PARSED ***")
 		# print("*** EXTRACTING KEYWORDS ***")
 		# labels, data = self.parser.get_raw_data()
@@ -34,6 +38,12 @@ class SVR(object):
 		print("*** KEYWORDS EXTRACTED ***")
 		self.ratings = self.parser.get_ratings_matrix()
 		self.k_folds = 5
+		print("TRACE")
+		r = self.ratings[0].nonzero()[0]
+		print(self.ratings[0].nonzero()[0])
+		a = self.documents_matrix[r[0]]
+		print(self.documents_matrix[0].nonzero()[0])
+		print(self.documents_matrix[1].nonzero()[0])
 		self.train_indices, self.test_indices = self.get_kfold_indices()
 		self.train()
 		print("Done in {}".format(datetime.datetime.now() - t0))
@@ -60,7 +70,7 @@ class SVR(object):
 			self.fold_train_indices, self.fold_test_indices = self.get_fold_indices(fold, self.train_indices, self.test_indices)
 			self.train_data, self.test_data = self.get_fold(fold, self.train_indices, self.test_indices)
 			## TODO Look at the users that have p+ p+ as pair
-			self.peer_extractor = PeerExtractor(self.train_data, self.documents_matrix, 'least_similar_k', 'cosine', self.peer_size, self.sim_threshold)
+			self.peer_extractor = PeerExtractor(self.train_data, self.documents_matrix, self.sampling_method, 'cosine', self.peer_size, self.sim_threshold)
 			self.similarity_matrix = self.peer_extractor.get_similarity_matrix()
 			fold_results = []
 			for user in range(self.ratings.shape[0]):
@@ -89,8 +99,8 @@ class SVR(object):
 
 				# Using grid search for fitting hyper barameters (Penalty, C)
 				tuned_parameters = [{'penalty': ['l1', 'l2'], 'C': [0.001, 0.01, 1, 10, 100, 1000]}]
-				grid_clf = GridSearchCV(LinearSVC(dual=False, tol=0.0001, random_state=41), tuned_parameters, cv=3, scoring='recall', n_jobs=-1)
-				#grid_clf = SKSVR(verbose=True)
+				#grid_clf = GridSearchCV(LinearSVC(dual=False, tol=0.0001, random_state=41), tuned_parameters, cv=3, scoring='recall', n_jobs=-1)
+				grid_clf = SKSVR(verbose=True)
 				grid_clf.fit(feature_vectors, labels)
 				# print("Best parameters set found on development set: {}").format(grid_clf.best_estimator_)
 

@@ -1,0 +1,21 @@
+{
+	"configuration": {
+		"parameters": {
+			"number_of_topics": 50,
+			"number_of_peers": 70,
+			"threshold": 0.07
+		},
+		"methods": {
+			"paper_presentation": "lda",
+			"learning": "",
+			"pair_formulation": "",
+			"sampling": "least_similar_k"
+	 	},
+	 	"metrics": {
+	 		"NDCG": [5, 10],
+	 		"MRR": 10,
+	 		"Recall": [10, 20, 40, 200],
+	 		"AUC": "True"
+	 	}	
+	}
+}

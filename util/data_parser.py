@@ -12,13 +12,14 @@ from sklearn.decomposition import LatentDirichletAllocation
 
 class DataParser(object):
 
-	def __init__(self, dataset, topics_num):
+	def __init__(self, dataset, topics_num, papers_presentation):
 		"""
 		Initializes the data parser given a dataset name
 		"""
 		self.base_folder = '../datasets/Extended_ctr'
 		self.dataset = dataset
-		
+		self.papers_presentation = papers_presentation
+
 		if dataset == 'citeulike-a':
 			self.dataset_folder = self.base_folder + '/citeulike_a_extended'
 		elif dataset == 'citeulike-t':
@@ -36,7 +37,6 @@ class DataParser(object):
 		self.id_map = {}
 		self.authors_map = {}
 		self.topics_num = topics_num
-
 		self.process()
 	
 
@@ -50,11 +50,12 @@ class DataParser(object):
 		self.build_document_word_matrix()
 		print("shape")
 		print(self.document_words.shape)
-		# lda = LatentDirichletAllocation(n_topics=self.topics_num, max_iter=10,
-		# 								learning_method='online',
-		# 								learning_offset=50., random_state=0,
-		# 								verbose=0)
-		# self.document_distribution = lda.fit_transform(self.document_words)
+		if self.papers_presentation == 'lda':
+			lda = LatentDirichletAllocation(n_topics=self.topics_num, max_iter=10,
+											learning_method='online',
+											learning_offset=50., random_state=0,
+											verbose=0)
+			self.document_distribution = lda.fit_transform(self.document_words)
 		self.parse_authors()
 
 	def build_document_word_matrix(self):
@@ -86,8 +87,11 @@ class DataParser(object):
 
 
 	def get_document_word_distribution(self):
+		if self.papers_presentation == 'lda':
+			return self.document_distribution
+		elif self.papers_presentation == 'attributes':
+			return self.feature_matrix
 		return self.document_words
-		# return self.document_distribution
 
 
 	def parse_paper_features(self):
@@ -220,7 +224,7 @@ class DataParser(object):
 					self.insert_word(word)
 				for word in line[4].split(" "):
 					self.insert_word(word)	
-				self.id_map[int(float(line[2]))] = doc_id
+				self.id_map[int(float(line[2]))] = doc_id - 1
 
 
 		if self.paper_count is None:
