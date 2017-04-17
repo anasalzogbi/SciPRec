@@ -9,7 +9,26 @@ import os
 class ConfigurationManager(object):
     """
     A class that will be used to setup the configuration.
+    Available configurations:
+    - Parameters:
+        - number_of_topics: int
+        - number_of_peers: int
+        - min_similarity_threshold: float
+        - max_similarity_threshold: float
+        - first_user: int (zero-based index)
+        - last_user: int (zero-based index)
+    - methods:
+        - paper_presentation: string ("lda")
+        - sampling: string ("least_similar_k")
+        - pair_formulation: string
+        - learning: string
+    - metrics:
+        - ndcg: list of int, give different values for k (ndcg@k)
+        - mrr: int, give the values for k (mrr@k)
+        - recall: list of int, give different values for k (recall@k)
+        - AUC: Boolean (True, or False)
     """
+
     def __init__(self):
         """
         Constructs a configuration from the config/ directory.
@@ -26,9 +45,18 @@ class ConfigurationManager(object):
 
         return self.config_dict['parameters']['number_of_peers']
 
-    def get_similarity_threshold(self):
+    def get_min_similarity_threshold(self):
 
-        return self.config_dict['parameters']['threshold']
+        return self.config_dict['parameters']['min_similarity_threshold']
+
+    def get_max_similarity_threshold(self):
+        return self.config_dict['parameters']['max_similarity_threshold']
+
+    def get_first_user(self):
+        return self.config_dict['parameters']['first_user']
+
+    def get_last_user(self):
+        return self.config_dict['parameters']['last_user']
 
     def get_paper_presentation(self):
 
