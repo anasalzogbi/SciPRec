@@ -15,23 +15,29 @@ class DataDumper(object):
     def __init__(self, dataset, folder=None):
         if folder is None:
             self.folder = self.DATAFOLDER
+        else:
+            self.folder = folder
         self.dataset = dataset
 
-    def save_matrix(self, matrix):
+    def save_matrix(self, matrix, name=None):
         """
         Function that dumps the matrix to a .dat file.
 
         :param ndarray matrix: Matrix to be dumped.
         :param str matrix_name: Name of the matrix to be dumped.
         """
+        matrix = np.array(matrix)
         print("dumping ")
-        path = self._create_path(self.dataset)
+        if name is None:
+            path = self._create_path(self.dataset)
+        else:
+            path = self._create_path(self.dataset + "-" + name)
         print(path)
-        print(matrix.sum())
-        np.save(path, matrix)
+        matrix.dump(path)
+        print(matrix.shape)
         print("dumped to %s" % path)
 
-    def load_matrix(self):
+    def load_matrix(self, name=None):
         """
         Function that loads a matrix from a file.
 
@@ -43,11 +49,14 @@ class DataDumper(object):
             And the matrix if loaded, random matrix otherwise.
         :rtype: tuple
         """
-        path = self._create_path(self.dataset) + '.npy'
+        if name is None:
+            path = self._create_path(self.dataset) + '.npy'
+        else:
+            path = self._create_path(self.dataset + "-" + name) + '.npy'
         print("trying to load %s" % path)
         try:
             matrix = np.load(path)
-            print(matrix.sum())
+            print(matrix.shape)
             res = (True, matrix)
 
             print("loaded from %s" % path)
