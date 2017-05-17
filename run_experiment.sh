@@ -8,8 +8,8 @@ declare -a machines=("ssh_handle_1" "ssh_handle_2" "ssh_handle3" "ssh_handle4" "
 counter=0
 for i in "${machines[@]}"
 do
-#	ssh "$i"
-#	sciprec
+	ssh "$i"
+	sciprec
 
 	let "start=$users_per_machine*$counter"
 	let "end=($counter+1)*$users_per_machine"
