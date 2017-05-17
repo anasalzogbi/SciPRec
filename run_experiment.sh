@@ -3,12 +3,12 @@
 users_count=$1
 machines_count=$2
 users_per_machine=$((users_count/machines_count))
-function run_instance() {
+run_instance() {
 	ssh "$1"
 	sciprec
 	python2 runnables.py -s $2 -e $3 &
 }
-declare -a machines=("ssh_handle_1" "ssh_handle_2" "ssh_handle3" "ssh_handle4" "ssh_handle5" "ssh_handle_6" "ssh_handle_7" "ssh_handle8" "ssh_handle9" "ssh_handle10")
+declare -a machines=("dbisma01" "dbisma02" "dbisma03" "dbisma04" "dbisma05" "dbisma06" "dbisma07" "dbisma08" "dbisma09" "dbisma10")
 if [ "${#machines[@]}" -ne "${machines_count}" ]; then
 	echo "Machine count is not equal to ssh handles"
 	exit
