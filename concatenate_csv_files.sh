@@ -4,8 +4,6 @@ out_file_name="final_results.csv"
 file_name="metrics-results.csv"
 for i in "${machines[@]}"
 do
-	ssh $i
-	sciprec_results
-	tail $file_name >> $out_file_name
+	ssh $i  "tail /PATH/$file_name >> /PATH/$out_file_name"
 done
 
