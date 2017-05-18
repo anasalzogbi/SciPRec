@@ -33,8 +33,9 @@ class DataDumper(object):
         else:
             path = self._create_path(self.dataset + "-" + name)
         print(path)
-        matrix.dump(path)
-        print(matrix.shape)
+        #matrix.dump(path)
+        #print(matrix.shape)
+        np.savetxt(path, np.array(matrix), delimiter=",")
         print("dumped to %s" % path)
 
     def load_matrix(self, name=None):
@@ -50,9 +51,9 @@ class DataDumper(object):
         :rtype: tuple
         """
         if name is None:
-            path = self._create_path(self.dataset) + '.npy'
+            path = self._create_path(self.dataset)
         else:
-            path = self._create_path(self.dataset + "-" + name) + '.npy'
+            path = self._create_path(self.dataset + "-" + name)
         print("trying to load %s" % path)
         try:
             matrix = np.load(path)
