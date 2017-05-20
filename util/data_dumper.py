@@ -35,7 +35,7 @@ class DataDumper(object):
         print(path)
         #matrix.dump(path)
         #print(matrix.shape)
-        np.savetxt(path, np.array(matrix), delimiter=",")
+        np.savetxt(path, np.array(matrix, dtype=int), delimiter=",", fmt='%i')
         print("dumped to %s" % path)
 
     def load_matrix(self, name=None):
@@ -56,7 +56,7 @@ class DataDumper(object):
             path = self._create_path(self.dataset + "-" + name)
         print("trying to load %s" % path)
         try:
-            matrix = np.load(path)
+            matrix = np.loadtxt(path,dtype=int, delimiter=',')
             print(matrix.shape)
             res = (True, matrix)
 
