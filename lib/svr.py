@@ -24,7 +24,10 @@ class SVR(object):
 		t0 = datetime.datetime.now()
 		self.peer_size = self.config_manager.get_number_of_peers()
 		self.topics_num = self.config_manager.get_number_of_topics()
-		self.sim_threshold = self.config_manager.get_similarity_threshold()
+		self.min_sim_threshold = self.config_manager.get_min_similarity_threshold()
+		self.max_sim_threshold = self.config_manager.get_max_similarity_threshold()
+		self.first_user =  self.config_manager.get_first_user()
+		self.last_user = self.config_manager.get_last_user()
 		paper_presentation = self.config_manager.get_paper_presentation()
 		print("*** PARSING DATA ***")
 		self.parser = DataParser(self.DATASET, self.topics_num, paper_presentation)
@@ -70,7 +73,7 @@ class SVR(object):
 			self.fold_train_indices, self.fold_test_indices = self.get_fold_indices(fold, self.train_indices, self.test_indices)
 			self.train_data, self.test_data = self.get_fold(fold, self.train_indices, self.test_indices)
 			## TODO Look at the users that have p+ p+ as pair
-			self.peer_extractor = PeerExtractor(self.train_data, self.documents_matrix, self.sampling_method, 'cosine', self.peer_size, self.sim_threshold)
+			self.peer_extractor = PeerExtractor(self.train_data, self.documents_matrix, self.sampling_method, 'cosine', self.peer_size, self.min_sim_threshold)
 			self.similarity_matrix = self.peer_extractor.get_similarity_matrix()
 			fold_results = []
 			for user in range(self.ratings.shape[0]):
@@ -139,7 +142,7 @@ class SVR(object):
 			folds_results.append(np.array(fold_results).mean(axis = 0))
 		print("-----------------------------------------------------------")
 		print("-----------------------------------------------------------")
-		print("Final results for peer size {} and {} topics and Sim_threshold = {}:".format(self.peer_size, self.topics_num, self.sim_threshold))
+		print("Final results for peer size {} and {} topics and Sim_threshold = {}:".format(self.peer_size, self.topics_num, self.min_sim_threshold))
 		print('                '+str(['{:^7}'.format(v) for v in ["NDCG@10", "MRR", "REC@10", "REC@50", "REC@100", "REC@200"]]))
 		for (i,f) in enumerate(folds_results):
 			print('For fold {}:     '.format(i)+str(['{:06.5f}'.format(v) for v in f]))
