@@ -17,6 +17,7 @@ class ConfigurationManager(object):
         - max_similarity_threshold: float
         - first_user: int (zero-based index)
         - last_user: int (zero-based index)
+        - dataset: string (dummy, citeulike-a, citeulike-t)
     - methods:
         - paper_presentation: string ("lda")
         - sampling: string ("least_similar_k")
@@ -58,6 +59,9 @@ class ConfigurationManager(object):
     def get_last_user(self):
         return self.config_dict['parameters']['last_user']
 
+    def get_dataset(self):
+        return self.config_dict['parameters']['dataset']
+
     def get_paper_presentation(self):
 
         return self.config_dict['methods']['paper_presentation']
@@ -81,3 +85,4 @@ class ConfigurationManager(object):
     def get_AUC(self):
 
         return self.config_dict['metrics']['AUC']
+
