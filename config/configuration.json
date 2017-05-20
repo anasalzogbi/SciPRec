@@ -3,10 +3,15 @@
 		"parameters": {
 			"number_of_topics": 50,
 			"number_of_peers": 70,
-			"threshold": 0.07
+			"min_similarity_threshold": 0.07,
+			"max_similarity_threshold": 1,
+			"dataset": "dummy",
+			"first_user": 1,
+			"last_user": 50
+
 		},
 		"methods": {
-			"paper_presentation": "lda",
+			"paper_presentation": "",
 			"learning": "",
 			"pair_formulation": "",
 			"sampling": "least_similar_k"
