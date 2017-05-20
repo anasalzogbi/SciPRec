@@ -228,7 +228,7 @@ start_id = int(start_id)
 end_id = int(end_id)
 
 parser = DataParser(DATASET, 20, paper_presentation)
-documents_matrix_shared = parser.get_document_word_distribution()
+document_matrix_shared = parser.get_document_word_distribution()
 ratings_shared = parser.get_ratings_matrix()
 k_folds = 5
 loader = DataDumper(DATASET, 'splits')
