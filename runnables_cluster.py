@@ -47,7 +47,7 @@ def recommend_user(user):
 		print("*** BUILDNG PAIRS ***")
 		i = 0
 		for pair in pairs:
-			feature_vector, label = build_vector_label_sim_svm(pair, user, documents_matrix_shared, ratings_shared, similarity_matrix)
+			feature_vector, label = build_vector_label_sim_svm(pair, user, document_matrix_shared, ratings_shared, similarity_matrix)
 			feature_vectors.append(feature_vector[0])
 			feature_vectors.append(feature_vector[1])
 			labels.append(label[0])
@@ -108,11 +108,11 @@ def calculate_top_recall(user, predictions, test_indices, k, test_data):
 	return recall / min(denom, k)
 
 
-def get_test_documents(test_indices, user, documents_matrix_shared):
+def get_test_documents(test_indices, user, document_matrix_shared):
 	documents = []
 	indices = []
 	for index in test_indices[user]:
-		documents.append(documents_matrix_shared[index])
+		documents.append(document_matrix_shared[index])
 		indices.append(index)
 	return np.array(documents), np.array(indices)
 
@@ -120,7 +120,7 @@ def get_user_paper_similarity(user, paper, ratings_shared, similarity_matrix_sha
 	liked_papers = ratings_shared[user].nonzero()[0]
 	return similarity_matrix_shared[paper][liked_papers].max()
 
-def build_vector_label_sim_svm(pair, user, documents_matrix_shared, ratings_shared, similarity_matrix_shared):
+def build_vector_label_sim_svm(pair, user, document_matrix_shared, ratings_shared, similarity_matrix_shared):
 	"""
 	Builds two feature vectors for each pair (p1, p2) as:
 	(1-user_paper_similarity(user, p2)) * (p1-p2) -> +1
@@ -130,9 +130,9 @@ def build_vector_label_sim_svm(pair, user, documents_matrix_shared, ratings_shar
 	peer = pair[1]
 	feature_vector = []
 	label = []
-	feature_vector.append((documents_matrix_shared[pivot] - documents_matrix_shared[peer]) * (1- get_user_paper_similarity(user, peer, ratings_shared, similarity_matrix_shared)))
+	feature_vector.append((document_matrix_shared[pivot] - document_matrix_shared[peer]) * (1- get_user_paper_similarity(user, peer, ratings_shared, similarity_matrix_shared)))
 	label.append(1)
-	feature_vector.append((documents_matrix_shared[peer] - documents_matrix_shared[pivot]) * (1- get_user_paper_similarity(user, peer, ratings_shared, similarity_matrix_shared)))
+	feature_vector.append((document_matrix_shared[peer] - document_matrix_shared[pivot]) * (1- get_user_paper_similarity(user, peer, ratings_shared, similarity_matrix_shared)))
 	label.append(-1)
 	return feature_vector, label
 
