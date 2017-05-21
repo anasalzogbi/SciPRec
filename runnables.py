@@ -2,13 +2,8 @@
 
 import sys
 import getopt
-
-from util.data_parser import DataParser
-from util.keyword_extractor import KeywordExtractor
-from lib.peer_extractor import PeerExtractor
-#from lib.svr import SVR
-from lib.lda_recommender import LDARecommender
 from lib.svr_cluster import SVRCluster
+
 # dp = DataParser('citeulike-a')
 # labels, data = dp.get_raw_data()
 # e = KeywordExtractor(labels, data)
@@ -32,4 +27,4 @@ for opt, arg in opts:
 		end_id = arg
 print(start_id)
 print(end_id)
-#svr = SVRCluster(int(start_id),int(end_id))
+svr = SVRCluster(int(start_id),int(end_id))
