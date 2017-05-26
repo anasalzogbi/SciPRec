@@ -26,21 +26,21 @@ def get_least_similar_k(user, ratings, similarity_matrix, sim_min_threshold, sim
 	positive_papers = ratings[user].nonzero()[0]
 	pairs = []
 	for paper in positive_papers:
-		top_similar = TopSimilar(peer_size)
+		peers_queue = TopSimilar(peer_size)
 		## Get papers with non zero similarity
 		# nonzeros = self.similarity_matrix[paper].nonzero()[0]
-		nonzeros = np.where((similarity_matrix[paper] > sim_min_threshold)&(similarity_matrix[paper] < sim_max_threshold))[0]
+		nonzeros = np.where((similarity_matrix[paper] >= sim_min_threshold)&(similarity_matrix[paper] <= sim_max_threshold))[0]
 		for index in nonzeros:
 			if paper == index:
 				continue
 			# This is a bad bug, the first index should be paper not user!
 			# top_similar.insert(index, 1 - self.similarity_matrix[user][index])
-			top_similar.insert(index, 1 - similarity_matrix[paper][index])
-		similar_papers = top_similar.get_indices()
-		for similar_paper in similar_papers:
+			peers_queue.insert(index, 1 - similarity_matrix[paper][index])
+		peers_indices = peers_queue.get_indices()
+		for peer in peers_indices:
 			# Get the similarity between the peer paper and the user profile
-			peer_user_similarity = similarity_matrix[similar_paper][positive_papers].max()
-			pairs.append((paper, similar_paper,peer_user_similarity))
+			peer_user_similarity = similarity_matrix[peer][positive_papers].max()
+			pairs.append((paper, peer,peer_user_similarity))
 	return pairs
 
 

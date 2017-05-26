@@ -48,8 +48,8 @@ class DataParser(object):
 		self.feature_labels, self.feature_matrix = self.parse_paper_features()
 		self.ratings = self.generate_ratings_matrix()
 		self.build_document_word_matrix()
-		print("shape")
-		print(self.document_words.shape)
+		#print("shape")
+		#print(self.document_words.shape)
 		if self.papers_presentation == 'lda':
 			lda = LatentDirichletAllocation(n_topics=self.topics_num, max_iter=10,
 											learning_method='online',
@@ -230,8 +230,8 @@ class DataParser(object):
 		if self.paper_count is None:
 			self.paper_count = len(data_vec)
 
-		print "Total is "
-		print(self.words_count)
+		#print "Total is "
+		#print(self.words_count)
 		return labels, np.array(data_vec)
 
 	def generate_ratings_matrix(self):
@@ -241,7 +241,7 @@ class DataParser(object):
 		if self.paper_count is None:
 			self.raw_labels, self.raw_data = self.parse_paper_raw_data()
 
-		print self.paper_count
+		#print self.paper_count
 		path = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.dataset_folder, 'users.dat')
 		self.user_count = sum(1 for line in open(path))
 		ratings = np.zeros((self.user_count, self.paper_count))
@@ -260,7 +260,7 @@ class DataParser(object):
 		return self.raw_labels, self.raw_data
 
 	def get_feature_vector(self):
-		return self.feature_labels, feature_matrix
+		return self.feature_labels, self.feature_matrix
 
 	def get_ratings_matrix(self):
 		return self.ratings
