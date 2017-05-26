@@ -277,8 +277,7 @@ parser.add_argument("--ending_user", "-e", help="The index of the last user (zer
 
 args = parser.parse_args()
 
-if args.processes:
-	processes = int(args.processes)
+
 if args.dataset:
 	dataset = args.dataset
 if args.peers_start:
