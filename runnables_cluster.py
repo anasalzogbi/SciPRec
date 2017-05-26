@@ -39,7 +39,7 @@ def create_path(folder, param_list):
 
 def recommend_user(user):
 	np.set_printoptions(precision=3)
-	experiments_data=[]
+	experiments_hashset={}
 	#print("Calculating for user {}".format(user))
 	experiments_results = []
 	for (min_sim, max_sim, peers) in parameters:
@@ -50,37 +50,44 @@ def recommend_user(user):
 			train_data, test_data = get_fold(fold, train_indices_shared, test_indices_shared, ratings_shared, k_folds)
 			#t0 = datetime.datetime.now()
 			# BUILDNG PAIRS
-			pairs = get_user_peer_papers(user, peer_extraction_method, train_data, similarity_matrix_shared, min_sim, max_sim, peers)
-			feature_vectors = []
-			labels = []
-			i = 0
-			for pair in pairs:
-				feature_vector, label = build_vector_label_sim_svm(pair, document_matrix_shared)
-				feature_vectors.append(feature_vector[0])
-				feature_vectors.append(feature_vector[1])
-				labels.append(label[0])
-				labels.append(label[1])
-				i += 1
-			#print("*** PAIRS BUILT ***")
-			feature_vectors = np.array(feature_vectors)
-			# Using grid search for fitting hyper barameters (Penalty, C)
-			tuned_parameters = [{'penalty': ['l1', 'l2'], 'C': [0.01, 1, 10]}]
-			grid_clf = GridSearchCV(LinearSVC(dual=False, tol=0.0001, random_state=41), tuned_parameters, cv=3, scoring='recall')
-			grid_clf.fit(feature_vectors, labels)
-			# print("Best parameters set found on development set: {}").format(grid_clf.best_estimator_)
-			# Using LinnearSVC instead of SVC, it uses the implementation of liblinear, should be faster for linear models.
-			#print "*** FITTED SVR FOR USER  ***"
-			#print("took {}".format(datetime.datetime.now() - t0))
+			relevant_papers, peer_papers, pairs_scores = get_user_peer_papers(user, peer_extraction_method, train_data, similarity_matrix_shared, min_sim, max_sim, peers)
+			experiment_hash = hash(frozenset(zip(relevant_papers, peer_papers)))
+			if experiment_hash not in experiments_hashset:
+				pairs = zip(relevant_papers, peer_papers, pairs_scores)
+				feature_vectors = []
+				labels = []
+				i = 0
+				for pair in pairs:
+					feature_vector, label = build_vector_label_sim_svm(pair, document_matrix_shared)
+					feature_vectors.append(feature_vector[0])
+					feature_vectors.append(feature_vector[1])
+					labels.append(label[0])
+					labels.append(label[1])
+					i += 1
+				#print("*** PAIRS BUILT ***")
+				feature_vectors = np.array(feature_vectors)
+				# Using grid search for fitting hyper barameters (Penalty, C)
+				tuned_parameters = [{'penalty': ['l1', 'l2'], 'C': [0.01, 1, 10]}]
+				grid_clf = GridSearchCV(LinearSVC(dual=False, tol=0.0001, random_state=41), tuned_parameters, cv=3, scoring='recall')
+				grid_clf.fit(feature_vectors, labels)
+				# print("Best parameters set found on development set: {}").format(grid_clf.best_estimator_)
+				# Using LinnearSVC instead of SVC, it uses the implementation of liblinear, should be faster for linear models.
+				#print "*** FITTED SVR FOR USER  ***"
+				#print("took {}".format(datetime.datetime.now() - t0))
 
-			test_documents, test_indices = get_test_documents(fold_test_indices, user, document_matrix_shared)
-			predictions = grid_clf.decision_function(test_documents)
-			ndcg_at_10, mrr_at_10 = evaluate(user, predictions, test_indices, 10, test_data)
-			fold_results.append(ndcg_at_10)
-			fold_results.append(mrr_at_10)
-			recall_xs = [10, 50, 100, 200]
-			for recall_x in recall_xs:
-				fold_results.append(calculate_top_recall(user, predictions, test_indices, recall_x, test_data))
-			experiment_results.append(fold_results)
+				test_documents, test_indices = get_test_documents(fold_test_indices, user, document_matrix_shared)
+				predictions = grid_clf.decision_function(test_documents)
+				ndcg_at_10, mrr_at_10 = evaluate(user, predictions, test_indices, 10, test_data)
+				fold_results.append(ndcg_at_10)
+				fold_results.append(mrr_at_10)
+				recall_xs = [10, 50, 100, 200]
+				for recall_x in recall_xs:
+					fold_results.append(calculate_top_recall(user, predictions, test_indices, recall_x, test_data))
+				experiment_results.append(fold_results)
+				experiments_hashset[experiment_hash] = fold_results
+			else:
+				print "**Experiment loaded"
+				experiment_results.append(experiments_hashset[experiment_hash])
 		experiments_results.append( ((min_sim, max_sim, peers), [user]+np.mean(np.array(experiment_results),axis=0 ).tolist() ))
 		print "Worker {}- Experiment: User:{}, min_sim:{}, max_sim:{}, peers:{}, result:{}".format(worker_id, user,min_sim, max_sim, peers,np.mean(np.array(experiment_results),axis=0 ).tolist())
 				#print("User {}, training {}, test {}, test_pos {} :".format(user, len(feature_vectors), len(test_documents), sum(test_data[user])))

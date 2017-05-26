@@ -24,7 +24,9 @@ def get_least_k(self, user):
 def get_least_similar_k(user, ratings, similarity_matrix, sim_min_threshold, sim_max_threshold, peer_size):
 	## Randomize
 	positive_papers = ratings[user].nonzero()[0]
-	pairs = []
+	relevant_papers = []
+	peer_papers = []
+	scores = []
 	for paper in positive_papers:
 		peers_queue = TopSimilar(peer_size)
 		## Get papers with non zero similarity
@@ -40,8 +42,10 @@ def get_least_similar_k(user, ratings, similarity_matrix, sim_min_threshold, sim
 		for peer in peers_indices:
 			# Get the similarity between the peer paper and the user profile
 			peer_user_similarity = similarity_matrix[peer][positive_papers].max()
-			pairs.append((paper, peer,peer_user_similarity))
-	return pairs
+			relevant_papers.append(paper)
+			peer_papers.append(peer)
+			scores.append(peer_user_similarity)
+	return (relevant_papers, peer_papers, scores)
 
 
 
