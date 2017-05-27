@@ -89,11 +89,17 @@ def recommend_user(user):
 				print "**Experiment loaded"
 				experiment_results.append(experiments_hashset[experiment_hash])
 		experiments_results.append( ((min_sim, max_sim, peers), [user]+np.mean(np.array(experiment_results),axis=0 ).tolist() ))
-		print "Experiment: User:{}, min_sim:{}, max_sim:{}, peers:{}, result:{}".format(user,min_sim, max_sim, peers,np.mean(np.array(experiment_results),axis=0 ).tolist())
+		print "Worker {}- Experiment: User:{}, min_sim:{}, max_sim:{}, peers:{}, result:{}".format(worker_id, user,min_sim, max_sim, peers,np.mean(np.array(experiment_results),axis=0 ).tolist())
 				#print("User {}, training {}, test {}, test_pos {} :".format(user, len(feature_vectors), len(test_documents), sum(test_data[user])))
 			#print(str(['{:^7}'.format(v) for v in ["NDCG@10", "MRR", "REC@10", "REC@50", "REC@100", "REC@200"]]))
 			#print(str(['{:06.5f}'.format(v) for v in [user]+results ]))
 	#print results
+	''' increment the global counter '''
+	global counter
+	# += operation is not atomic, so we need to get a lock:
+	with counter.get_lock():
+		counter.value += 1
+	print ("Worker {}, Progress: {}/{}".format(worker_id, counter.value, end_id-start_id))
 	return experiments_results
 
 
@@ -255,13 +261,14 @@ peers_step = 10
 
 paper_presentation = "keywords"
 processes = -1
-
+worker_id = ""
 similarity_metric =  'cosine'
 peer_extraction_method = "least_similar_k"
 num_cores = multiprocessing.cpu_count()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", "-d", help = "Which dataset to use", choices=['dummy', 'citeulike-a', 'citeulike-t'])
+parser.add_argument("--processes", "-cores", help = "The number of processes (cores), -1 for using all available cores", choices = [str(i) for i in [-1]+range(1,num_cores+1)])
 parser.add_argument("--peers_start", "-pe_st", help = "The number of peer papers added for each relevant paper, the start value of the experiments", type = int)
 parser.add_argument("--peers_end", "-pe_end", help = "The number of peer papers added for each relevant paper, the end value of the experiments", type = int)
 parser.add_argument("--peers_step", "-pe_stp", help = "The peer's step value of the experiments", type = int)
@@ -271,13 +278,14 @@ parser.add_argument("--min_sim_step", "-mn_stp", help = "The step value of he mi
 parser.add_argument("--max_sim_st", "-mx_st", help = "The maximum threshold for the peers, the start value of the experiments", type = float)
 parser.add_argument("--max_sim_end", "-mx_end", help = "The maximum threshold for the peers, the end value of the experiments", type = float)
 parser.add_argument("--max_sim_step", "-mx_stp", help = "The step value of he maximum smilarity threshold of the experiments", type = float)
-
+parser.add_argument("--worker_id", "-w", help = "The worker id, used to calculate overall progress", type = str)
 parser.add_argument("--starting_user", "-s", help="The index of the first user (zero based)", type=int)
 parser.add_argument("--ending_user", "-e", help="The index of the last user (zero based)", type=int)
 
 args = parser.parse_args()
 
-
+if args.processes:
+	processes = int(args.processes)
 if args.dataset:
 	dataset = args.dataset
 if args.peers_start:
@@ -314,6 +322,8 @@ if args.starting_user:
 	start_id = args.starting_user
 if args.ending_user:
 	end_id = args.ending_user
+if args.worker_id:
+	worker_id = args.worker_id
 
 print("Starting user: {}".format(start_id))
 print("Ending user: {}".format(end_id))
@@ -338,14 +348,16 @@ _, test_indices_shared = (loader.load_matrix('test_indices'))
 
 print("*** Calculating Similarity ***")
 similarity_matrix_shared = calculate_pairwise_similarity(ratings_shared.shape[1], similarity_metric, document_matrix_shared)
-d = {}
-results = []
-print("Running experiments on users: ")
-for user in range(start_id, end_id):
-	results.append(recommend_user(user))
-	print ("Progress: {}/{}".format(user, end_id - start_id))
-print("Done all users users: ")
+print("Creating parallel job")
 
+counter = multiprocessing.Value('i', 0)
+if processes == -1:
+	p = multiprocessing.Pool()
+else:
+	p = multiprocessing.Pool(processes)
+
+d = {}
+results = p.map(recommend_user, range(start_id, end_id))
 for user_results in results:
 	for (param,result) in user_results:
 		try:

@@ -4,102 +4,69 @@ This module provides functionalities for extracting peer papers
 """
 import numpy as np
 import random
-from sklearn.metrics.pairwise import cosine_similarity
-from scipy import sparse
 from util.top_similar import TopSimilar
-import sys
-
-class PeerExtractor(object):
 
 
-	def __init__(self, ratings, documents, method, similarity_metric, k, sim_threshold):
-		print("*** PEER EXTRACTOR INIT ***")
-		self.sim_threshold = sim_threshold
-		self.ratings = ratings
-		self.method = method
-		self.k = k
-		self.documents = documents
-		self.similarity_metric = similarity_metric
-		self.pairs = {}
-		self.similarity_matrix = None
-		print("*** Calculating Similarity ***")
-		self.calculate_pairwise_similarity()
 
-	def get_similarity_matrix(self):
-		return self.similarity_matrix
+def get_user_peer_papers(user, peer_extraction_method, ratings, sim_min_threshold, sim_max_threshold, sim_threshold, peer_size):
 
-	def get_user_peer_papers(self, user):
+	if peer_extraction_method == 'random':
+		return get_random_peer_papers(user)
+	elif peer_extraction_method == 'least_k':
+			return get_least_k(user)
+	elif peer_extraction_method =="least_similar_k":
+			return get_least_similar_k(user, ratings, sim_min_threshold, sim_max_threshold, sim_threshold, peer_size)
 
-		if self.method == 'random':
-			self.pairs[user] = self.get_random_peer_papers(user)
-		else:
-			if self.method == 'least_k':
-				self.pairs[user] = self.get_least_k(user)
-			else: 
-				self.pairs[user] = self.get_least_similar_k(user)
+def get_least_k(self, user):
+	## TODO Add it
+	pass
 
+def get_least_similar_k(user, ratings, similarity_matrix, sim_min_threshold, sim_max_threshold, peer_size):
+	## Randomize
+	positive_papers = ratings[user].nonzero()[0]
+	relevant_papers = []
+	peer_papers = []
+	scores = []
+	for paper in positive_papers:
+		peers_queue = TopSimilar(peer_size)
+		## Get papers with non zero similarity
+		# nonzeros = self.similarity_matrix[paper].nonzero()[0]
+		nonzeros = np.where((similarity_matrix[paper] >= sim_min_threshold)&(similarity_matrix[paper] <= sim_max_threshold))[0]
+		for index in nonzeros:
+			if paper == index:
+				continue
+			# This is a bad bug, the first index should be paper not user!
+			# top_similar.insert(index, 1 - self.similarity_matrix[user][index])
+			peers_queue.insert(index, 1 - similarity_matrix[paper][index])
+		peers_indices = peers_queue.get_indices()
+		for peer in peers_indices:
+			# Get the similarity between the peer paper and the user profile
+			peer_user_similarity = similarity_matrix[peer][positive_papers].max()
+			relevant_papers.append(paper)
+			peer_papers.append(peer)
+			scores.append(peer_user_similarity)
+	return (relevant_papers, peer_papers, scores)
+
+
+
+
+
+def get_random_peer_papers(self, user):
+
+	if user in self.pairs:
 		return self.pairs[user]
 
-	def get_least_k(self, user):
-		## TODO Add it
-		pass
-
-	def get_least_similar_k(self, user):
-		## Randomize
-		positive_papers = self.ratings[user].nonzero()[0]
-		negative_papers = np.where(self.ratings[user] == 0)[0]
-		user_ratings = self.ratings[user]
-		top_similar = TopSimilar(self.k)
-		pairs = []
-		for paper in positive_papers:
-			top_similar = TopSimilar(self.k)
-			## Get papers with non zero similarity
-			# nonzeros = self.similarity_matrix[paper].nonzero()[0]
-			nonzeros = np.where(self.similarity_matrix[paper] > self.sim_threshold)[0]
-			for index in nonzeros:
-				if paper == index:
-					continue
-				# This is a bad bug, the first index should be paper not user!
-				# top_similar.insert(index, 1 - self.similarity_matrix[user][index])
-				top_similar.insert(index, 1 - self.similarity_matrix[paper][index])
-			similar_papers = top_similar.get_indices()
-			for similar_paper in similar_papers:
-				pairs.append((paper, similar_paper))
-		return pairs
+	positive_papers = self.ratings[user].nonzero()[0]
+	negative_papers = np.where(self.ratings[user] == 0)[0]
+	pairs = []
+	for paper in positive_papers:
+		random_indices = random.sample(range(0, len(negative_papers)), self.k)
+		for index in random_indices:
+			pairs.append((paper, negative_papers[index]))
+	return pairs
 
 
-	def get_random_peer_papers(self, user):
-
-		if user in self.pairs:
-			return self.pairs[user]
-
-		positive_papers = self.ratings[user].nonzero()[0]
-		negative_papers = np.where(self.ratings[user] == 0)[0]
-		pairs = []
-		for paper in positive_papers:
-			random_indices = random.sample(range(0, len(negative_papers)), self.k)
-			for index in random_indices:
-				pairs.append((paper, negative_papers[index]))
-		return pairs
-
-	def calculate_pairwise_similarity(self):
-		if self.similarity_matrix is not None:
-			return
-		docs_count = self.ratings.shape[1]
-		self.similarity_matrix = np.eye(docs_count)
-		if self.similarity_metric == 'dot':
-			# Compute pairwise dot product
-			for i in range(docs_count):
-				for j in range(i, docs_count):
-					self.similarity_matrix[i][j] = self.documents[i].dot(self.documents[j].T)
-					self.similarity_matrix[j][i] = self.similarity_matrix[i][j]
-
-		if self.similarity_metric == 'cosine':
-			self.similarity_matrix = cosine_similarity(sparse.csr_matrix(self.documents))
-		#self.similarity_matrix[self.similarity_matrix == 1.0] = 0
-		# similarity_matrix = self.documents.dot(self.documents.T)
-
-	def get_textual_similarity(self, user, paper):
-		liked_papers = self.ratings[user].nonzero()
-		return self.similarity_matrix[paper][liked_papers].max()
+def get_textual_similarity(self, user, paper):
+	liked_papers = self.ratings[user].nonzero()
+	return self.similarity_matrix[paper][liked_papers].max()
 

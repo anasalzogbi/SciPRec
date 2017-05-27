@@ -27,16 +27,16 @@ class DataDumper(object):
         :param str matrix_name: Name of the matrix to be dumped.
         """
         matrix = np.array(matrix)
-        print("dumping ")
+        #print("dumping ")
         if name is None:
             path = self._create_path(self.dataset)
         else:
             path = self._create_path(self.dataset + "-" + name)
-        print(path)
+        #print(path)
         #matrix.dump(path)
         #print(matrix.shape)
-        np.savetxt(path, np.array(matrix), delimiter=",")
-        print("dumped to %s" % path)
+        np.savetxt(path, np.array(matrix, dtype=int), delimiter=",", fmt='%i')
+        #print("dumped to %s" % path)
 
     def load_matrix(self, name=None):
         """
@@ -54,13 +54,13 @@ class DataDumper(object):
             path = self._create_path(self.dataset)
         else:
             path = self._create_path(self.dataset + "-" + name)
-        print("trying to load %s" % path)
+        #print("trying to load %s" % path)
         try:
-            matrix = np.load(path)
-            print(matrix.shape)
+            matrix = np.loadtxt(path,dtype=int, delimiter=',')
+            #print(matrix.shape)
             res = (True, matrix)
 
-            print("loaded from %s" % path)
+        #    print("loaded from %s" % path)
             return res
         except Exception:
             print("File not found, %s will initialize randomly" % path)
