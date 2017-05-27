@@ -6,6 +6,7 @@ from util.data_parser import DataParser
 from lib.configuration_manager import ConfigurationManager
 from sklearn.decomposition import LatentDirichletAllocation
 import numpy as np
+from util.top_similar import TopSimilar as TopRecommendations
 
 
 class LDARecommender(object):
@@ -60,7 +61,7 @@ class LDARecommender(object):
 				documents_model = self.build_documents_model(corpus, test_indices)
 				print("model built")
 				## evaluate
-
+				top_predictions = TopRecommendations(200)
 				for index, test_document in enumerate(self.test_indices):
 					## Compute SKL
 					min_skl = np.inf
@@ -78,12 +79,30 @@ class LDARecommender(object):
 							min_skl = skl
 
 					similarity = 1 / min_skl
-					print("SIM IS")
-					print(similarity)
+					top_predictions.insert(test_document, similarity)
+				k = 10
+				dcg = 0
+				idcg = 0
+				mrr = 0
+				recommendation_indices = top_predictions.get_indices()
+				for pos_index, index in enumerate(recommendation_indices):
+					hit_found = False
+					dcg += (self.test_data[user][index] / np.log2(pos_index + 2))
+					idcg += 1 / np.log2(pos_index + 2)
+					if self.ratings[user][index] == 1 and mrr == 0.0:
+						mrr = 1.0 / (pos_index + 1) * 1.0
+					if pos_index + 1 == k:
+						break
+					if idcg != 0:
+						break
+				recall_at_200 = self.calculate_recall(top_predictions, user, 20)
 
-
-
-
+	def calculate_recall(self, top_predictions, user, k):
+		recommendation_indices = top_predictions.get_indices()
+		hit_count = 0
+		for pos_index, index in enumerate(recommendation_indices):
+			hit_count += self.ratings[user][index]
+		return hit_count / k
 
 	def build_documents_model(self, corpus, test_documents):
 		researchers_test_word_count = np.sum(self.documents[test_documents])
