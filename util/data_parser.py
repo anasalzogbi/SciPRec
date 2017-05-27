@@ -44,8 +44,8 @@ class DataParser(object):
 		"""
 		Starts parsing the data and gets matrices ready for training
 		"""
-		self.raw_labels, self.raw_data = self.parse_paper_raw_data()
-		self.feature_labels, self.feature_matrix = self.parse_paper_features()
+		#self.raw_labels, self.raw_data = self.parse_paper_raw_data()
+
 		self.ratings = self.generate_ratings_matrix()
 		self.build_document_word_matrix()
 		#print("shape")
@@ -56,6 +56,8 @@ class DataParser(object):
 											learning_offset=50., random_state=0,
 											verbose=0)
 			self.document_distribution = lda.fit_transform(self.document_words)
+		if self.papers_presentation == 'attributes':
+			self.feature_labels, self.feature_matrix = self.parse_paper_features()
 		self.parse_authors()
 
 	def build_document_word_matrix(self):

@@ -13,6 +13,7 @@ max_sim_step=${10}
 peers_start=${11}
 peers_end=${12}
 peers_step=${13}
+local_path=${14}
 
 echo "================Parameters=============="
 echo "users_count: $users_count"
