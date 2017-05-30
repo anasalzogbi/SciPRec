@@ -1,10 +1,10 @@
-from util.data_parser_t import DataParser
+from util.data_parser import DataParser
 from util.data_dumper import DataDumper
 from lib.folds_splitter import get_kfold_indices
 
 
 if __name__ == "__main__":
-	DATASET = 'citeulike-t'
+	DATASET = 'dummy'
 
 	parser = DataParser(DATASET, 0, "keywords")
 	ratings = parser.get_ratings_matrix()

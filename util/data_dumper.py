@@ -4,7 +4,10 @@ This module saves and imports matrices.
 """
 import os
 import numpy as np
+np.set_printoptions(threshold=np.inf)
 import traceback
+import csv
+import sys
 
 class DataDumper(object):
     """
@@ -35,8 +38,25 @@ class DataDumper(object):
         #print(path)
         #matrix.dump(path)
         #print(matrix.shape)
-        np.savetxt(path, np.array(matrix, dtype=int), delimiter=",", fmt='%i')
-        #print("dumped to %s" % path)
+        #np.savetxt(path, np.array(list(matrix), dtype=int), delimiter=",", fmt='%i')
+        self.dump_2d_matrix(matrix, path)
+        # print("dumped to %s" % path)
+
+    def dump_2d_matrix(self, matrix, path):
+        with open(path, 'wb') as f:
+            writer = csv.writer(f, delimiter=',')
+            i = 0
+            for line in matrix:
+                writer.writerow(line)
+    
+    def load_2d_matrix(self, path):
+        matrix = []
+        with open(path, 'rb') as f:
+            reader = csv.reader(f, delimiter=',')
+
+            for row in reader:
+                matrix.append(map(int, row))
+        return np.array(matrix)
 
     def load_matrix(self, name=None):
         """
@@ -56,7 +76,8 @@ class DataDumper(object):
             path = self._create_path(self.dataset + "-" + name)
         #print("trying to load %s" % path)
         try:
-            matrix = np.loadtxt(path,dtype=int, delimiter=',')
+            #matrix = self.load_2d_matrix(path)
+            matrix = self.load_2d_matrix(path)
             #print(matrix.shape)
             res = (True, matrix)
 
