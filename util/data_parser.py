@@ -8,6 +8,9 @@ import csv
 import numpy as np
 import datetime
 from sklearn.decomposition import LatentDirichletAllocation
+import sys
+csv.field_size_limit(sys.maxsize)
+
 
 
 class DataParser(object):
@@ -118,6 +121,7 @@ class DataParser(object):
 					i += 1
 					continue
 				paper_id = line[0]
+				self.id_map[int(line[1])] = paper_id
 				if int(paper_id) != i:
 					for _ in range(int(paper_id) - i):
 						feature_vec.append([None] * row_length)
@@ -220,11 +224,14 @@ class DataParser(object):
 					first_line = False
 					continue
 				data_vec.append(line[1:])
-				for word in line[3].split(" "):
-					self.insert_word(word)
-				for word in line[4].split(" "):
-					self.insert_word(word)	
-				self.id_map[int(float(line[2]))] = doc_id - 1
+				if self.dataset == 'citeulike-t':
+					for word in line[1].split(" "):
+						self.insert_word(word)
+				else:	
+					for word in line[3].split(" "):
+						self.insert_word(word)
+					for word in line[4].split(" "):
+						self.insert_word(word)	
 
 
 		if self.paper_count is None:
