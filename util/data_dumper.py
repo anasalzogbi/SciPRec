@@ -47,18 +47,7 @@ class DataDumper(object):
             writer = csv.writer(f, delimiter=',')
             i = 0
             for line in matrix:
-
-                print(i)
-                i += 1
                 writer.writerow(line)
-    def load_2d_matrix(self, path):
-        matrix = []
-        with open(path, 'rb') as f:
-            reader = csv.reader(f, delimiter=',')
-
-            for row in reader:
-                matrix.append(map(int, row))
-        return np.array(matrix)
 
     def load_matrix(self, name=None):
         """

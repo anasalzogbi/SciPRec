@@ -8,9 +8,6 @@ import csv
 import numpy as np
 import datetime
 from sklearn.decomposition import LatentDirichletAllocation
-import sys
-csv.field_size_limit(sys.maxsize)
-
 
 
 class DataParser(object):
@@ -41,13 +38,14 @@ class DataParser(object):
 		self.authors_map = {}
 		self.topics_num = topics_num
 		self.process()
-	
+
 
 	def process(self):
 		"""
 		Starts parsing the data and gets matrices ready for training
 		"""
-		#self.raw_labels, self.raw_data = self.parse_paper_raw_data()
+		# Uncomment this, if you want to parse raw data:
+		self.raw_labels, self.raw_data = self.parse_paper_raw_data()
 
 		self.ratings = self.generate_ratings_matrix()
 		self.build_document_word_matrix()
@@ -62,7 +60,7 @@ class DataParser(object):
 			self.document_distribution = lda.fit_transform(self.document_words)
 		if self.papers_presentation == 'attributes':
 			self.feature_labels, self.feature_matrix = self.parse_paper_features()
-		self.parse_authors()
+		#self.parse_authors()
 
 	def build_document_word_matrix(self):
 		path = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.dataset_folder, 'mult.dat')
@@ -107,7 +105,7 @@ class DataParser(object):
 		"""
 		now = datetime.datetime.now()
 		path = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.dataset_folder, 'paper_info.csv')
-		with open(path, "r") as f:			
+		with open(path, "r") as f:
 			reader = csv.reader(f, delimiter='\t')
 			first_line = True
 			feature_vec = []
@@ -125,7 +123,6 @@ class DataParser(object):
 					i += 1
 					continue
 				paper_id = line[0]
-				self.id_map[int(line[1])] = paper_id
 				if int(paper_id) != i:
 					for _ in range(int(paper_id) - i):
 						feature_vec.append([None] * row_length)
@@ -138,7 +135,7 @@ class DataParser(object):
 						current_entry.append(line[label_id])
 				feature_vec.append(current_entry)
 				i += 1
-		
+
 		if self.paper_count is None:
 			self.paper_count = len(feature_vec)
 		return labels, np.array(feature_vec)
@@ -168,17 +165,6 @@ class DataParser(object):
 			return self.feature_matrix[path][series_index]
 		return None
 	def parse_authors(self):
-		if bool(self.id_map) == False:
-			path = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.dataset_folder, 'paper_info.csv')
-			with open(path, "r") as f:
-				reader = csv.reader(f, delimiter='\t')
-				first_line = True
-				for line in reader:
-					if first_line:
-						first_line = False
-						continue
-					paper_id = line[0]
-					self.id_map[int(line[1])] = paper_id
 		path = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.dataset_folder, 'authors.csv')
 		with open(path, "r") as f:
 			reader = csv.reader(f, delimiter='\t')
@@ -216,7 +202,7 @@ class DataParser(object):
 			user_conference = self.get_paper_conference(user_paper)
 			if user_conference == paper_conference:
 				numer += 1.0
-		return numer / denom 
+		return numer / denom
 
 	def parse_paper_raw_data(self):
 		"""
@@ -227,27 +213,21 @@ class DataParser(object):
 		total = 0
 		if self.dataset == 'citeulike-t':
 			delimiter = '\t'
-		with open(path, "r") as f:
-			reader = csv.reader(f, delimiter=delimiter)
-			first_line = True
-			data_vec = []
-			row_length = 0
-			for doc_id, line in enumerate(reader):
-				if first_line:
-					labels = line[1:]
-					row_length = len(line)
-					first_line = False
-					continue
-				data_vec.append(line[1:])
-				if self.dataset == 'citeulike-t':
+			with open(path, "r") as f:
+				reader = csv.reader(f, delimiter=delimiter)
+				first_line = True
+				data_vec = []
+				row_length = 0
+				for doc_id, line in enumerate(reader):
+					if first_line:
+						labels = line[1:]
+						row_length = len(line)
+						first_line = False
+						continue
+					data_vec.append(line[1:])
 					for word in line[1].split(" "):
 						self.insert_word(word)
-				else:	
-					for word in line[3].split(" "):
-						self.insert_word(word)
-					for word in line[4].split(" "):
-						self.insert_word(word)	
-
+					self.id_map[int(float(line[0]))] = doc_id - 1
 		if self.paper_count is None:
 			self.paper_count = len(data_vec)
 
@@ -272,7 +252,7 @@ class DataParser(object):
 				splitted = line.replace("\n", "").split(" ")
 				for paper_id in splitted:
 					ratings[i][int(paper_id)] = 1
-				
+
 				i += 1
 
 		return ratings
@@ -285,7 +265,7 @@ class DataParser(object):
 
 	def get_ratings_matrix(self):
 		return self.ratings
-				
+
 
 
 
