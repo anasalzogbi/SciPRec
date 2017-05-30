@@ -48,6 +48,15 @@ class DataDumper(object):
             i = 0
             for line in matrix:
                 writer.writerow(line)
+    
+    def load_2d_matrix(self, path):
+        matrix = []
+        with open(path, 'rb') as f:
+            reader = csv.reader(f, delimiter=',')
+
+            for row in reader:
+                matrix.append(map(int, row))
+        return np.array(matrix)
 
     def load_matrix(self, name=None):
         """
@@ -68,7 +77,7 @@ class DataDumper(object):
         #print("trying to load %s" % path)
         try:
             #matrix = self.load_2d_matrix(path)
-            matrix = np.loadtxt(path,dtype=int, delimiter=',')
+            matrix = self.load_2d_matrix(path)
             #print(matrix.shape)
             res = (True, matrix)
 
