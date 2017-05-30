@@ -75,7 +75,7 @@ def get_kfold_indices(ratings, k_folds):
 		return train_indices, test_indices
 
 def get_user_fold_indices(user, fold_num, train_indices_shared, test_indices_shared, k_folds):
-	return (train_indices_shared[user * k_folds + fold_num], test_indices_shared[user * k_folds + fold_num])
+	return (train_indices_shared[user * k_folds + (fold_num-1)], test_indices_shared[user * k_folds + (fold_num)])
 
 
 def generate_user_kfold_matrix(user, user_train_indices, user_test_indices, ratings_shared):

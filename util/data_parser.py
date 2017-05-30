@@ -51,10 +51,11 @@ class DataParser(object):
 		#print("shape")
 		#print(self.document_words.shape)
 		if self.papers_presentation == 'lda':
+			print ('***** LDA- topics {}'.format(self.topics_num))
 			lda = LatentDirichletAllocation(n_topics=self.topics_num, max_iter=10,
 											learning_method='online',
 											learning_offset=50., random_state=0,
-											verbose=0)
+											verbose=0, n_jobs=-1)
 			self.document_distribution = lda.fit_transform(self.document_words)
 		if self.papers_presentation == 'attributes':
 			self.feature_labels, self.feature_matrix = self.parse_paper_features()
@@ -85,6 +86,7 @@ class DataParser(object):
 				word_count = value[1]
 				document_words[key][word_id] = word_count
 		del documents_hash
+		print ("**** Document Matrix: {}".format(document_words.shape))
 		self.document_words = document_words
 
 
@@ -225,7 +227,7 @@ class DataParser(object):
 				for word in line[3].split(" "):
 					self.insert_word(word)
 				for word in line[4].split(" "):
-					self.insert_word(word)	
+					self.insert_word(word)
 				self.id_map[int(float(line[2]))] = doc_id - 1
 
 

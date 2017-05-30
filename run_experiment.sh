@@ -13,6 +13,8 @@ max_sim_step=${10}
 peers_start=${11}
 peers_end=${12}
 peers_step=${13}
+
+# The path to the location where the code is, example: /home/alzoghba/sciprec_cluster_experiment
 local_path=${14}
 
 echo "================Parameters=============="
@@ -34,9 +36,8 @@ echo "================Parameters=============="
 users_per_machine=$((users_count/machines_count))
 
 function run_instance() {
-        echo "$1: python2 /home/alzoghba/sciprec_cluster_experiment/runnable_cluster_1.py -s $2 -e $3 -d $4 -cores $5 -pe_st $6 -pe_end $7 -pe_stp $8 -mn_st $9 -mn_end ${10} -mn_stp ${11} -mx_st ${12} -mx_end ${13} -mx_stp ${14}  -w $1"
-        ssh -tt "$1" "python2 /home/alzoghba/sciprec_cluster_experiment/runnable_cluster_1.py -s $2 -e $3 -d $4 -cores $5 -pe_st $6 -pe_end $7 -pe_stp $8 -mn_st $9 -mn_end ${10} -mn_stp ${11} -mx_st ${12} -mx_end ${13} -mx_stp ${14}  -w $1"
-
+        echo "$1: python2 ${15}/runnable_cluster.py -s $2 -e $3 -d $4 --processes $5 -pe_st $6 -pe_end $7 -pe_stp $8 -mn_st $9 -mn_end ${10} -mn_stp ${11} -mx_st ${12} -mx_end ${13} -mx_stp ${14}  -w $1"
+        ssh -tt "$1" "python2 ${15}/runnable_cluster.py -s $2 -e $3 -d $4 --processes $5 -pe_st $6 -pe_end $7 -pe_stp $8 -mn_st $9 -mn_end ${10} -mn_stp ${11} -mx_st ${12} -mx_end ${13} -mx_stp ${14}  -w $1"
 }
 
 declare -a machines=("dbisma02" "dbisma03" "dbisma04" "dbisma05" "dbisma06" "dbisma07" "dbisma08" "dbisma09" "dbisma10")
@@ -53,10 +54,10 @@ for i in "${machines[@]}"
 do
     let "start=$users_per_machine*$counter"
     let "end=($counter+1)*$users_per_machine"
-    run_instance $i $start $end $dataset $cores $peers_start $peers_end $peers_step $min_sim_start $min_sim_end $min_sim_step $max_sim_start $max_sim_end $max_sim_step &
+    run_instance $i $start $end $dataset $cores $peers_start $peers_end $peers_step $min_sim_start $min_sim_end $min_sim_step $max_sim_start $max_sim_end $max_sim_step $local_path&
     ((counter++))
 done
-python2 runnable_cluster_1.py -s $end -e  $users_count -d $dataset -cores $((cores-2)) -pe_st $peers_start -pe_end $peers_end -pe_stp $peers_step -mn_st $min_sim_start -mn_end $min_sim_end -mn_stp  $min_sim_step -mx_st $max_sim_start -mx_end  $max_sim_end -mx_stp $max_sim_step  -w dbisma01  &
+python2 runnable_cluster.py -s $end -e  $users_count -d $dataset --processes $((cores-2)) -pe_st $peers_start -pe_end $peers_end -pe_stp $peers_step -mn_st $min_sim_start -mn_end $min_sim_end -mn_stp  $min_sim_step -mx_st $max_sim_start -mx_end  $max_sim_end -mx_stp $max_sim_step  -w dbisma01  &
 
 
 echo "end script"
