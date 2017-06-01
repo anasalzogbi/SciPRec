@@ -11,6 +11,8 @@ import numpy as np
 import multiprocessing
 import itertools as it
 
+from memory_profiler import profile
+
 from lib.ltr import svm_ltr_predict
 from lib.ltr import svm_ltr_train
 from lib.rocchio import rocchio_predict
@@ -45,8 +47,9 @@ def create_path(folder, param_list):
 	file_name = "mins_{}_maxs_{}_peers_{}.csv".format(param_list[0], param_list[1], param_list[2])
 	return os.path.join(direct, file_name)
 
+#@profile
 def recommend_user(user):
-	np.set_printoptions(precision=3)
+
 	experiments_hashset={}
 	#print("Calculating for user {}".format(user))
 	experiments_results = []
@@ -79,12 +82,11 @@ def recommend_user(user):
 						calculate_top_recall(predictions, user_fold_test_indices, recall_x, user_test_ratings))
 				experiment_results.append(fold_results)
 				experiments_hashset[experiment_hash] = fold_results
+			del fold_results
 		experiments_results.append( ((min_sim, max_sim, peers), [user]+np.mean(np.array(experiment_results),axis=0 ).tolist() ))
+		#del experiment_results
 		print "Worker {}- Experiment: User:{}, min_sim:{}, max_sim:{}, peers:{}, result:{}".format(worker_id, user,min_sim, max_sim, peers,np.mean(np.array(experiment_results),axis=0 ).tolist())
-				#print("User {}, training {}, test {}, test_pos {} :".format(user, len(feature_vectors), len(test_documents), sum(test_data[user])))
-			#print(str(['{:^7}'.format(v) for v in ["NDCG@10", "MRR", "REC@10", "REC@50", "REC@100", "REC@200"]]))
-			#print(str(['{:06.5f}'.format(v) for v in [user]+results ]))
-	#print results
+
 	try:
 		''' increment the global counter '''
 		global counter
@@ -92,8 +94,10 @@ def recommend_user(user):
 		with counter.get_lock():
 			counter.value += 1
 		print ("Worker {}, Progress: {}/{}".format(worker_id, counter.value, end_id-start_id))
+		del experiments_hashset
 		return experiments_results
 	except NameError:
+		del experiments_hashset
 		return experiments_results
 
 
@@ -101,17 +105,11 @@ def recommend_user(user):
 start_id = 0
 end_id = -1
 
-sim_min_st = 0.05
-sim_min_end = 0.1
-sim_min_step = 0.05
+sim_min = [0.05]
 
-sim_max_st = 0.3
-sim_max_end = 1
-sim_max_step = 0.3
+sim_max = [0.3]
 
-peers_st = 1
-peers_end = 50
-peers_step = 10
+peers = [1]
 
 paper_presentation = "keywords"
 peer_scoring_method = "user_based"
@@ -135,15 +133,13 @@ parser.add_argument("--peer_scoring_method", "-peer_scoring", help = "Peer scori
 parser.add_argument("--pair_build_method", "-pair_building", help = "Pair building method", choices=['pairs', 'singles'])
 
 parser.add_argument("--processes", "-cores", help = "The number of processes (cores), -1 for using all available cores, default is 1", choices = [str(i) for i in [-1]+range(1,num_cores+1)])
-parser.add_argument("--peers_start", "-pe_st", help = "The number of peer papers added for each relevant paper, the start value of the experiments", type = int)
-parser.add_argument("--peers_end", "-pe_end", help = "The number of peer papers added for each relevant paper, the end value of the experiments", type = int)
-parser.add_argument("--peers_step", "-pe_stp", help = "The peer's step value of the experiments", type = int)
-parser.add_argument("--min_sim_st", "-mn_st", help = "The minimum threshold for the peers, the start value of the experiments", type = float)
-parser.add_argument("--min_sim_end", "-mn_end", help = "The minimum threshold for the peers, the end value of the experiments", type = float)
-parser.add_argument("--min_sim_step", "-mn_stp", help = "The step value of he minimum smilarity threshold of the experiments", type = float)
-parser.add_argument("--max_sim_st", "-mx_st", help = "The maximum threshold for the peers, the start value of the experiments", type = float)
-parser.add_argument("--max_sim_end", "-mx_end", help = "The maximum threshold for the peers, the end value of the experiments", type = float)
-parser.add_argument("--max_sim_step", "-mx_stp", help = "The step value of he maximum smilarity threshold of the experiments", type = float)
+
+parser.add_argument('--peers', '-p', nargs='+', type=int,help= "The number of peer papers added for each relevant paper, accepts multiple values")
+
+parser.add_argument('--min_sim', nargs='+', type=float,help= "The minimum threshols for peer sampling, accepts multiple values")
+
+parser.add_argument('--max_sim', nargs='+', type=float,help= "The maximum threshols for peer sampling, accepts multiple values")
+
 parser.add_argument("--worker_id", "-w", help = "The worker id, used to calculate overall progress", type = str)
 parser.add_argument("--starting_user", "-s", help="The index of the first user (zero based)", type=int)
 parser.add_argument("--ending_user", "-e", help="The index of the last user (zero based)", type=int)
@@ -156,35 +152,15 @@ else:
 	print "*** Running on a single core"
 if args.dataset:
 	dataset = args.dataset
-if args.peers_start:
-	peers_st = args.peers_start
-if args.peers_end:
-	peers_end = args.peers_end
-if peers_end <= peers_st :
-	print "Error: Peers_end {} must be greater than Peers_start {}"
-	sys.exit()
-if args.peers_step:
-	peers_step = args.peers_step
 
-if args.min_sim_st:
-	sim_min_st = args.min_sim_st
-if args.min_sim_end:
-	sim_min_end = args.min_sim_end
-if args.min_sim_step:
-	sim_min_step = args.min_sim_step
-if sim_min_end <= sim_min_st :
-	print "Error: sim_min_end {} must be greater than sim_min_st {}"
-	sys.exit()
+if args.peers:
+	peers = args.peers
 
-if args.max_sim_st:
-	sim_max_st = args.max_sim_st
-if args.max_sim_end:
-	sim_max_end = args.max_sim_end
-if args.max_sim_step:
-	sim_max_step = args.max_sim_step
-if sim_max_end <= sim_max_st :
-	print "Error: sim_max_end {} must be greater than sim_max_st {}"
-	sys.exit()
+if args.min_sim:
+	sim_min = args.min_sim
+
+if args.max_sim:
+	sim_max = args.max_sim
 
 if args.starting_user:
 	start_id = args.starting_user
@@ -209,9 +185,7 @@ if args.topics:
 
 print("*** Starting user: {}".format(start_id))
 print("*** Ending user: {}".format(end_id))
-parameters = [ (mins, maxs,p) for (mins, maxs,p) in it.product(np.arange(sim_min_st, sim_min_end, sim_min_step), \
-		   np.arange(sim_max_st, sim_max_end, sim_max_step), \
-		   np.arange(peers_st, peers_end, peers_step)) if mins < maxs]
+parameters = [ (mins, maxs,p) for (mins, maxs,p) in it.product(sim_min, sim_max, peers) if mins < maxs]
 print ("*** Number of experiments per user: {}".format(sum(1 for _ in parameters)))
 
 start_id = int(start_id)
@@ -235,7 +209,7 @@ print("*** Calculating Similarity ***")
 similarity_matrix_shared = calculate_pairwise_similarity(ratings_shared.shape[1], similarity_metric, document_matrix_shared)
 print("*** Creating parallel job")
 print("*** Running experiments on users: ")
-
+np.set_printoptions(precision=3)
 results = []
 if processes == 1:
 	print("*** Single core ")

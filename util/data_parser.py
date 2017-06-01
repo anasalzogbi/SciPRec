@@ -89,7 +89,7 @@ class DataParser(object):
 				word_count = value[1]
 				document_words[key][word_id] = word_count
 		del documents_hash
-		print ("**** Document Matrix: {}".format(document_words.shape))
+
 		self.document_words = document_words
 
 
